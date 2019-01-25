@@ -1,3 +1,9 @@
+## 2019-1-25 1.2.8
+
+- update vault to 1.0.2
+- add to conditional install resource so that the correct setcap permissions are given via the exec statement depending on if mlokc is disabled or not
+- correct the "sorted_json" error
+
 ## 2017-10-16 1.2.8
 - Update to vault 0.8.3
 
