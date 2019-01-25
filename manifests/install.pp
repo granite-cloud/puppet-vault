@@ -46,7 +46,7 @@ class vault::install {
       unless    => "getcap ${vault_bin} | grep cap_ipc_lock+ep",
     }
  }else{
-    exec { "setcap cap_syslog ${vault_bin}":
+    exec { "setcap cap_syslog+ep ${vault_bin}":
       path      => ['/sbin', '/usr/sbin', '/bin', '/usr/bin', ],
       subscribe => File[$vault_bin],
       unless    => "getcap ${vault_bin} | grep cap_syslog",
