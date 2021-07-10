@@ -4,20 +4,6 @@
 #
 class vault::config {
 
-  $_config_hash = delete_undef_values({
-    'storage'           => $::vault::storage,
-    'ha_storage'        => $::vault::ha_storage,
-    'listener'          => $::vault::listener,
-    'telemetry'         => $::vault::telemetry,
-    'disable_cache'     => $::vault::disable_cache,
-    'default_lease_ttl' => $::vault::default_lease_ttl,
-    'max_lease_ttl'     => $::vault::max_lease_ttl,
-    'disable_mlock'     => $::vault::disable_mlock,
-    'ui'                => $::vault::enable_ui,
-  })
-
-  $config_hash = merge($_config_hash, $::vault::extra_config)
-
   file { $::vault::config_dir:
     ensure  => directory,
     purge   => $::vault::purge_config_dir,
@@ -26,25 +12,54 @@ class vault::config {
     group   => $::vault::group,
   }
 
-  file { "${::vault::config_dir}/config.json":
-    content => to_json_pretty($config_hash),
-    owner   => $::vault::user,
-    group   => $::vault::group,
-  }
+  if $::vault::manage_config_file {
 
-  # If using the file storage then the path must exist and be readable
-  # and writable by the vault user, if we have a file path and the
-  # manage_storage_dir attribute is true, then we create it here.
-  #
-  if $::vault::storage['file'] and $::vault::manage_storage_dir {
-    if ! $::vault::storage['file']['path'] {
-      fail('Must provide a path attribute to storage file')
+    $_config_hash = delete_undef_values({
+      'listener'          => $::vault::listener,
+      'storage'           => $::vault::storage,
+      'ha_storage'        => $::vault::ha_storage,
+      'seal'              => $::vault::seal,
+      'telemetry'         => $::vault::telemetry,
+      'disable_cache'     => $::vault::disable_cache,
+      'default_lease_ttl' => $::vault::default_lease_ttl,
+      'max_lease_ttl'     => $::vault::max_lease_ttl,
+      'disable_mlock'     => $::vault::disable_mlock,
+      'ui'                => $::vault::enable_ui,
+      'api_addr'          => $::vault::api_addr,
+    })
+
+    $config_hash = merge($_config_hash, $::vault::extra_config)
+
+    file { "${::vault::config_dir}/config.json":
+      content => to_json_pretty($config_hash),
+      owner   => $::vault::user,
+      group   => $::vault::group,
+      mode    => $::vault::config_mode,
     }
 
-    file { $::vault::storage['file']['path']:
-      ensure => directory,
-      owner  => $::vault::user,
-      group  => $::vault::group,
+    # If manage_storage_dir is true and a file or raft storage backend is
+    # configured, we create the directory configured in that backend.
+    #
+    if $::vault::manage_storage_dir {
+
+      if $::vault::storage['file'] {
+        $_storage_backend = 'file'
+      } elsif $::vault::storage['raft'] {
+        $_storage_backend = 'raft'
+      } else {
+        fail('Must provide a valid storage backend: file or raft')
+      }
+
+      if $::vault::storage[$_storage_backend]['path'] {
+        file { $::vault::storage[$_storage_backend]['path']:
+          ensure => directory,
+          owner  => $::vault::user,
+          group  => $::vault::group,
+        }
+      } else {
+        fail("Must provide a path attribute to storage ${_storage_backend}")
+      }
+
     }
   }
 

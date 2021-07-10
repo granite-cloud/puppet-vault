@@ -9,10 +9,12 @@ class vault::params {
   $group              = 'vault'
   $manage_group       = true
   $config_dir         = '/etc/vault'
+  $config_mode        = '0750'
+  $manage_config_file = true
   $download_url       = undef
   $download_url_base  = 'https://releases.hashicorp.com/vault/'
   $download_extension = 'zip'
-  $version            = '0.10.0'
+  $version            = '1.4.2'
   $service_name       = 'vault'
   $num_procs          = $facts['processorcount']
   $package_name       = 'vault'
@@ -38,6 +40,7 @@ class vault::params {
   # These should always be undef as they are optional settings that
   # should not be configured unless explicitly declared.
   $ha_storage         = undef
+  $seal               = undef
   $disable_cache      = undef
   $telemetry          = undef
   $default_lease_ttl  = undef
@@ -54,6 +57,7 @@ class vault::params {
   $service_provider = $facts['service_provider']
 
   case $facts['architecture'] {
+    'aarch64':        { $arch = 'arm64' }
     /(x86_64|amd64)/: { $arch = 'amd64' }
     'i386':           { $arch = '386'   }
     /^arm.*/:         { $arch = 'arm'   }
@@ -65,11 +69,13 @@ class vault::params {
       $install_method      = 'repo'
       $bin_dir             = '/bin'
       $manage_service_file = true
+      $manage_repo         = false
     }
     default: {
       $install_method      = 'archive'
       $bin_dir             = '/usr/local/bin'
       $manage_service_file = undef
+      $manage_repo         = true
     }
   }
   $os = downcase($facts['kernel'])

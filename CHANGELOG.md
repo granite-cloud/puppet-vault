@@ -1,5 +1,33 @@
-## 2.0.0-dev
+## 2020-05-27 2.3.0
+- Add `manage_config_file` option
+- Update stm/file_capability dependency
+- Update to vault 1.4.2
+
+## 2020-02-01 2.2.0
+- Add support for `api_addr` stanza
+- Update to vault 1.3.2
+
+## 2019-08-19 2.1.0
+- Add support for `seal` stanza
+- Remove duplicate TimeoutStopSec in systemd unit file
+- Update to vault 1.2.2
+
+## 2019-06-01 2.0.1
+- Allow puppetlabs/stdlib 6.x
+- Allow stm/file_capability 2.x
+- Allow puppet/archive 4.x
+
+## 2019-03-17 2.0.0
+- Drop Puppet 3 support
+- Add Puppet 6 support
 - Allow specifying `$listener` as an array of listener hashes
+- Add `config_mode` parameter
+- Update systemd unit file
+- Support Ubuntu 18.04
+- Support enabling Web UI
+- Update to vault 1.0.3
+- Use stm/file_capability to manage file capabilities
+- Use camptocamp/systemd to manage systemd unit file
 
 ## 2017-10-16 1.2.8
 - Update to vault 0.8.3

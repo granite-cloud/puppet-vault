@@ -96,12 +96,14 @@ describe 'vault' do
           it 'excludes unconfigured config options' do
             expect(subject).not_to include_json(
               ha_storage: exist,
+              seal: exist,
               disable_cache: exist,
               telemetry: exist,
               default_lease_ttl: exist,
               max_lease_ttl: exist,
               disable_mlock: exist,
-              ui: exist
+              ui: exist,
+              api_addr: exist
             )
           end
         end
@@ -120,6 +122,21 @@ describe 'vault' do
           it {
             expect(param_value(catalogue, 'File', '/etc/vault/config.json', 'content')).to include_json(
               disable_mlock: true
+            )
+          }
+        end
+
+        context 'when api address is set' do
+          let(:params) do
+            {
+              api_addr: 'something'
+            }
+          end
+
+
+          it {
+            expect(param_value(catalogue, 'File', '/etc/vault/config.json', 'content')).to include_json(
+              api_addr: 'something'
             )
           }
         end
@@ -184,6 +201,47 @@ describe 'vault' do
           end
         end
 
+        context "When asked not to manage the repo" do
+          let(:params) {{
+            :manage_repo => false
+          }}
+
+          case facts[:os]['family']
+          when 'Debian'
+            it { should_not contain_apt__source('HashiCorp') }
+          when 'RedHat'
+            it { should_not contain_yumrepo('HashiCorp') }
+          end
+        end
+
+        context "When asked to manage the repo but not to install using repo" do
+          let(:params) {{
+            :install_method => 'archive',
+            :manage_repo => true
+          }}
+
+          case facts[:os]['family']
+          when 'Debian'
+            it { should_not contain_apt__source('HashiCorp') }
+          when 'RedHat'
+            it { should_not contain_yumrepo('HashiCorp') }
+          end
+        end
+
+        context "When asked to manage the repo and to install as repo" do
+          let(:params) {{
+            :install_method => 'repo',
+            :manage_repo => true
+          }}
+
+          case facts[:os]['family']
+          when 'Debian'
+            it { should contain_apt__source('HashiCorp') }
+          when 'RedHat'
+            it { should contain_yumrepo('HashiCorp') }
+          end
+        end
+
         context 'when installed from package repository' do
           let(:params) do
             {
@@ -221,6 +279,16 @@ describe 'vault' do
             ui: true
           )
         }
+      end
+
+      context 'when specifying config mode' do
+        let(:params) do
+          {
+            config_mode: '0700'
+          }
+        end
+
+        it { is_expected.to contain_file('/etc/vault/config.json').with_mode('0700') }
       end
 
       context 'when specifying an array of listeners' do
@@ -270,7 +338,7 @@ describe 'vault' do
         }
       end
 
-      context 'when specifying manage_storage_dir' do
+      context 'when specifying manage_storage_dir and file storage backend' do
         let(:params) do
           {
             manage_storage_dir: true,
@@ -287,6 +355,38 @@ describe 'vault' do
             with_ensure('directory').
             with_owner('vault').
             with_group('vault')
+        }
+      end
+
+      context 'when specifying manage_storage_dir and raft storage backend' do
+        let(:params) do
+          {
+            manage_storage_dir: true,
+            storage: {
+              'raft' => {
+                'path' => '/data/vault'
+              }
+            }
+          }
+        end
+
+        it {
+          is_expected.to contain_file('/data/vault').
+            with_ensure('directory').
+            with_owner('vault').
+            with_group('vault')
+        }
+      end
+
+      context 'when specifying manage_config_file = false' do
+        let(:params) do
+          {
+            manage_config_file: false,
+          }
+        end
+
+        it {
+          is_expected.not_to contain_file ('/etc/vault/config.json')
         }
       end
 
